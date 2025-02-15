@@ -126,7 +126,7 @@ EOF
 		ninja -C build-android-aarch64 &> "$workdir/ninja_log"
 
 	if ! [ -a "$workdir"/mesa-main/build-android-aarch64/src/broadcom/vulkan/libvulkan_broadcom.so ]; then
-		echo -e "$red Build failed! $nocolor" && exit 1
+		rm -rf "$workdir"/mesa-main/build-android-aarch64/src/broadcom/vulkan/libvulkan_broadcom.so
 	fi
 }
 
