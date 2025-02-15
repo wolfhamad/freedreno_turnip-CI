@@ -98,8 +98,8 @@ port_lib_for_magisk(){
 	echo "Using patchelf to match soname ..."  $'\n'
 	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_broadcom "$workdir"
 	cd "$workdir"
-	patchelf --set-soname vulkan_broadcom.so libvulkan_broadcom.so
-	mv libvulkan_broadcom.so.so vulkan_broadcom.so.so
+	patchelf --set-soname vulkan.broadcom.so libvulkan_broadcom.so
+	mv libvulkan.broadcom.so.so vulkan_broadcom.so.so
 
 	if ! [ -a vulkan_broadcom.so.so ]; then
 		echo -e "$red Build failed! $nocolor" && exit 1
