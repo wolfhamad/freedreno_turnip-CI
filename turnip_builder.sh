@@ -96,7 +96,7 @@ EOF
 
 port_lib_for_magisk(){
 	echo "Using patchelf to match soname ..."  $'\n'
-	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_broadcom "$workdir"
+	cp "$workdir"/mesa-main/build-android-aarch64/src/broadcom/vulkan/libvulkan_broadcom.so "$workdir"
 	cd "$workdir"
 	patchelf --set-soname vulkan.broadcom.so libvulkan_broadcom.so
 	mv libvulkan_broadcom.so vulkan_broadcom.so
