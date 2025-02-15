@@ -116,11 +116,10 @@ EOF
 			-Dplatforms=android \
 			-Dplatform-sdk-version="$sdkver" \
 			-Dandroid-stub=true \
-			-Dgallium-drivers= \
+			-Dgallium-drivers=v3d \
 			-Dvulkan-drivers=broadcom \
 			-Dvulkan-beta=true \
-			-Dbroadcom-kmds=kgsl \
-			-Db_lto=true \
+   			-Db_lto=true \
 			-Dstrip=true &> "$workdir/meson_log"
 
 	echo "Compiling build files ..." $'\n'
