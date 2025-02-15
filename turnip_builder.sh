@@ -7,7 +7,7 @@ deps="meson ninja patchelf unzip curl pip flex bison zip"
 workdir="$(pwd)/turnip_workdir"
 magiskdir="$workdir/turnip_module"
 ndkver="android-ndk-r28"
-sdkver="33"
+sdkver="30"
 mesasrc="https://gitlab.freedesktop.org/mesa/mesa/-/archive/main/mesa-main.zip"
 clear
 
@@ -146,7 +146,7 @@ set_perm \$MODPATH/$p1/vulkan_broadcom.so.so 0 0 0644 u:object_r:same_process_ha
 EOF
 
 	echo "Copy necessary files from work directory ..." $'\n'
-	cp "$workdir"/vulkan_broadcom.so.so "$magiskdir"/"$p1"
+	cp "$workdir"/vulkan_broadcom.so "$magiskdir"/"$p1"
 
 	echo "Packing files in to magisk module ..." $'\n'
 	zip -r "$workdir"/turnip.zip ./* &> /dev/null
@@ -157,9 +157,9 @@ EOF
 }
 
 port_lib_for_adrenotools(){
-	libname=vulkan_broadcom.so.so
+	libname=vulkan_broadcom.so
 	echo "Using patchelf to match soname" $'\n'
-	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_broadcom.so.so "$workdir"/$libname
+	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_broadcom.so "$workdir"/$libname
 	cd "$workdir"
 	patchelf --set-soname $libname $libname
 	echo "Preparing meta.json" $'\n'
