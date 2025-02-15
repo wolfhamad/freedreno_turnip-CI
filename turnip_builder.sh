@@ -99,7 +99,7 @@ port_lib_for_magisk(){
 	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_broadcom "$workdir"
 	cd "$workdir"
 	patchelf --set-soname vulkan.broadcom.so libvulkan_broadcom.so
-	mv libvulkan.broadcom.so vulkan_broadcom.so
+	mv libvulkan_broadcom.so vulkan_broadcom.so
 
 	if ! [ -a vulkan_broadcom.so.so ]; then
 		echo -e "$red Build failed! $nocolor" && exit 1
