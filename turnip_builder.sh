@@ -159,14 +159,14 @@ EOF
 port_lib_for_adrenotools(){
 	libname=vulkan_broadcom.so
 	echo "Using patchelf to match soname" $'\n'
-	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_broadcom.so "$workdir"/$libname
+	cp "$workdir"/mesa-main/build-android-aarch64/src/broadcom/vulkan/libvulkan_broadcom.so "$workdir"/$libname
 	cd "$workdir"
 	patchelf --set-soname $libname $libname
 	echo "Preparing meta.json" $'\n'
 	cat <<EOF > "meta.json"
 {
 	"schemaVersion": 1,
-	"name": "freedreno_turnip-CI",
+	"name": "broadcom_turnip-CI",
 	"description": "$(date)",
 	"author": "MrMiy4mo, kethen",
 	"packageVersion": "1",
