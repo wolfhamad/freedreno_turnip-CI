@@ -86,7 +86,7 @@ endian = 'little'
 EOF
 
 	echo "Generating build files ..." $'\n'
-	meson setup build-android-aarch64 --cross-file "$workdir"/mesa-main/android-aarch64 -Dbuildtype=release -Dplatforms=android -Dplatform-sdk-version=$sdkver -Dandroid-stub=true -Dgallium-drivers= -Dvulkan-drivers=freedreno -Dvulkan-beta=true -Dfreedreno-kmds=kgsl -Db_lto=true -Dstrip=true &> "$workdir"/meson_log
+	meson setup build-android-aarch64 --cross-file "$workdir"/mesa-main/android-aarch64 -Dbuildtype=release -Dplatforms=android -Dplatform-sdk-version=$sdkver -Dandroid-stub=true -Dgallium-drivers=v3d,vc4 -Dvulkan-drivers=broadcom -Dvulkan-beta=true -Db_lto=true -Dstrip=true &> "$workdir"/meson_log
 
 	echo "Compiling build files ..." $'\n'
 	ninja -C build-android-aarch64 &> "$workdir"/ninja_log
@@ -96,12 +96,12 @@ EOF
 
 port_lib_for_magisk(){
 	echo "Using patchelf to match soname ..."  $'\n'
-	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_freedreno.so "$workdir"
+	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_broadcom "$workdir"
 	cd "$workdir"
-	patchelf --set-soname vulkan.adreno.so libvulkan_freedreno.so
-	mv libvulkan_freedreno.so vulkan.adreno.so
+	patchelf --set-soname vulkan_broadcom.so libvulkan_broadcom.so
+	mv libvulkan_broadcom.so.so vulkan_broadcom.so.so
 
-	if ! [ -a vulkan.adreno.so ]; then
+	if ! [ -a vulkan_broadcom.so.so ]; then
 		echo -e "$red Build failed! $nocolor" && exit 1
 	fi
 
@@ -142,11 +142,11 @@ EOF
 	cat <<EOF >"customize.sh"
 set_perm_recursive \$MODPATH/system 0 0 755 u:object_r:system_file:s0
 set_perm_recursive \$MODPATH/system/vendor 0 2000 755 u:object_r:vendor_file:s0
-set_perm \$MODPATH/$p1/vulkan.adreno.so 0 0 0644 u:object_r:same_process_hal_file:s0
+set_perm \$MODPATH/$p1/vulkan_broadcom.so.so 0 0 0644 u:object_r:same_process_hal_file:s0
 EOF
 
 	echo "Copy necessary files from work directory ..." $'\n'
-	cp "$workdir"/vulkan.adreno.so "$magiskdir"/"$p1"
+	cp "$workdir"/vulkan_broadcom.so.so "$magiskdir"/"$p1"
 
 	echo "Packing files in to magisk module ..." $'\n'
 	zip -r "$workdir"/turnip.zip ./* &> /dev/null
@@ -157,9 +157,9 @@ EOF
 }
 
 port_lib_for_adrenotools(){
-	libname=vulkan.freedreno.so
+	libname=vulkan_broadcom.so.so
 	echo "Using patchelf to match soname" $'\n'
-	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_freedreno.so "$workdir"/$libname
+	cp "$workdir"/mesa-main/build-android-aarch64/src/freedreno/vulkan/libvulkan_broadcom.so.so "$workdir"/$libname
 	cd "$workdir"
 	patchelf --set-soname $libname $libname
 	echo "Preparing meta.json" $'\n'
