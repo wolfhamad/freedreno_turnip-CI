@@ -1,0 +1,68 @@
+name: Build "v3dv"
+
+on:
+  workflow_dispatch:
+    inputs:
+      mesa_ref:
+        description: "Mesa branch or tag to build (the patch is made against current main)"
+        default: "main"
+      sdk_version:
+        description: "Android SDK/API level of the target (ro.build.version.sdk)"
+        default: "36"
+      hal_name:
+        description: "Value of ro.hardware.vulkan on the device (library is named vulkan.<value>.so)"
+        default: "broadcom"
+  # Scheduled builds are off: the patch is written against one Mesa version
+  # and will stop applying as main moves. Re-enable once it is stable.
+  # schedule:
+  # - cron: "20 5 1,15 * *"
+
+permissions:
+  contents: write
+
+jobs:
+  start_building_v3dv:
+    runs-on: ubuntu-24.04
+    env:
+      MESA_REF: ${{ inputs.mesa_ref }}
+      SDKVER: ${{ inputs.sdk_version }}
+      HAL_NAME: ${{ inputs.hal_name }}
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Prepare environment
+      run: |
+        sudo sed -i 's/^Types: deb$/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
+        sudo apt update
+        sudo apt build-dep mesa -y
+        sudo apt install -y patchelf ccache python3-mako python3-yaml zip unzip curl flex bison git
+
+    - name: Check patch is present
+      run: test -f v3dv-descriptor-indexing-diag.patch
+
+    - name: Execute build script
+      run: bash ./v3dv_builder.sh
+
+    - name: Upload a Build Artifact
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: Upload meson and ninja logs for debugging
+        if-no-files-found: ignore
+        path: |
+          v3dv_workdir/ninja_log
+          v3dv_workdir/meson_log
+          v3dv_workdir/libdrm_ninja_log
+          v3dv_workdir/libdrm_meson_log
+          v3dv_workdir/mesa-main/build-android-aarch64/meson-logs/meson-log.txt
+
+    - name: Release "v3dv"
+      uses: softprops/action-gh-release@v2
+      with:
+        body: v3dv (Raspberry Pi 5 Vulkan) diagnostic build with VK_EXT_descriptor_indexing exposed, as a raw HAL library, a magisk module and a driver package for adrenotools
+        tag_name: github_run
+        name: v3dv build
+        files: |
+           v3dv_workdir/v3dv.zip
+           v3dv_workdir/v3dv_adrenotools.zip
+           v3dv_workdir/vulkan.*.so
