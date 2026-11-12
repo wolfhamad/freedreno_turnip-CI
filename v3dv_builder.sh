@@ -12,6 +12,10 @@
 #   LIBDRM_REF  libdrm branch or tag               (default: main)
 #   PATCHFILE   patch to apply to Mesa             (default: ./v3dv-descriptor-indexing-diag.patch)
 
+# The shebang's -e is ignored when the script is started as "bash ./script",
+# so set it here too: any failing command must stop the build.
+set -e
+
 # Define variables
 green='\033[0;32m'
 red='\033[0;31m'
@@ -63,12 +67,13 @@ run_logged(){
 
 # Downloads a zip, extracts it and renames its top directory.
 fetch_zip(){
-	local url="$1" zipfile="$2" dest="$3" top
+	local url="$1" zipfile="$2" dest="$3" tmp
+	tmp="$(mktemp -d "$workdir/extract.XXXXXX")"
 	curl -fL --retry 3 "$url" --output "$zipfile"
-	top="$(unzip -Z1 "$zipfile" | head -n 1 | cut -d/ -f1)"
-	unzip -q -o "$zipfile"
+	unzip -q -o "$zipfile" -d "$tmp"
 	rm -rf "$dest"
-	mv "$top" "$dest"
+	mv "$tmp"/* "$dest"
+	rmdir "$tmp"
 }
 
 check_deps(){
@@ -187,7 +192,6 @@ build_libdrm(){
 		-Damdgpu=disabled \
 		-Dnouveau=disabled \
 		-Dvmwgfx=disabled \
-		-Dfreedreno=disabled \
 		-Dvc4=disabled \
 		-Detnaviv=disabled \
 		-Dexynos=disabled \
