@@ -1,0 +1,75 @@
+From: local <local@localhost>
+Subject: [PATCH] v3dv: log vkCreateDevice failures, expose VK_EXT_descriptor_indexing
+
+Diagnostic patch. Advertises VK_EXT_descriptor_indexing with every
+descriptor-indexing feature still false, and logs why vk_device_init()
+rejects a device. It does NOT implement descriptor indexing.
+---
+diff --git a/src/broadcom/vulkan/v3dv_device.c b/src/broadcom/vulkan/v3dv_device.c
+--- a/src/broadcom/vulkan/v3dv_device.c
++++ b/src/broadcom/vulkan/v3dv_device.c
+@@ -300,6 +300,7 @@
+       .EXT_depth_clamp_zero_one             = device->devinfo.ver >= 71,
+       .EXT_depth_clip_control               = true,
+       .EXT_depth_clip_enable                = device->devinfo.ver >= 71,
++      .EXT_descriptor_indexing              = true,
+       .EXT_device_memory_report             = true,
+       .EXT_load_store_op_none               = true,
+       .EXT_inline_uniform_block             = true,
+@@ -1013,6 +1014,12 @@
+       .shaderRoundingModeRTZFloat32 = false,
+       .shaderRoundingModeRTZFloat64 = false,
+ 
++      /* VK_EXT_descriptor_indexing: all of its features are reported as
++       * false, but the extension still requires a valid pool-wide limit
++       * (the spec minimum is 500000).
++       */
++      .maxUpdateAfterBindDescriptorsInAllPools = 500000,
++
+       .maxPerStageDescriptorUpdateAfterBindSamplers = V3D_MAX_TEXTURE_SAMPLERS,
+       .maxPerStageDescriptorUpdateAfterBindUniformBuffers = MAX_UNIFORM_BUFFERS,
+       .maxPerStageDescriptorUpdateAfterBindStorageBuffers = MAX_STORAGE_BUFFERS,
+@@ -2215,6 +2222,35 @@
+    v3dv_meta_texel_buffer_copy_finish(device);
+ }
+ 
++/* Release builds don't log vk_error(), so when vk_device_init() rejects a
++ * device we say why: print the result and any requested extension that the
++ * physical device doesn't support. If no extension is listed and the result
++ * is VK_ERROR_FEATURE_NOT_PRESENT, the app asked for a missing feature.
++ */
++static void
++log_device_create_failure(const struct v3dv_physical_device *pdevice,
++                          const VkDeviceCreateInfo *pCreateInfo,
++                          VkResult result)
++{
++   mesa_loge("v3dv: vkCreateDevice failed in vk_device_init: VkResult %d\n",
++             (int) result);
++
++   for (uint32_t i = 0; i < pCreateInfo->enabledExtensionCount; i++) {
++      const char *name = pCreateInfo->ppEnabledExtensionNames[i];
++      bool supported = false;
++
++      for (int j = 0; j < VK_DEVICE_EXTENSION_COUNT; j++) {
++         if (strcmp(name, vk_device_extensions[j].extensionName) == 0) {
++            supported = pdevice->vk.supported_extensions.extensions[j];
++            break;
++         }
++      }
++
++      if (!supported)
++         mesa_loge("v3dv:   requested extension not supported: %s\n", name);
++   }
++}
++
+ VKAPI_ATTR VkResult VKAPI_CALL
+ v3dv_CreateDevice(VkPhysicalDevice physicalDevice,
+                   const VkDeviceCreateInfo *pCreateInfo,
+@@ -2290,6 +2326,7 @@
+    result = vk_device_init(&device->vk, &physical_device->vk,
+                            &dispatch_table, pCreateInfo, pAllocator);
+    if (result != VK_SUCCESS) {
++      log_device_create_failure(physical_device, pCreateInfo, result);
+       vk_free(&device->vk.alloc, device);
+       return vk_error(NULL, result);
+    }
